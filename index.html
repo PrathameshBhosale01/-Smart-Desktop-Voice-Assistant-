@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Voice Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.3; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s ease-in-out infinite;
+        }
+        .animate-pulse-slow-delay {
+            animation: pulse-slow 3s ease-in-out infinite;
+            animation-delay: 0.7s;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white min-h-screen">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-slow"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-slow-delay"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto relative z-10 p-4 sm:p-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                        Smart Assistant
+                    </h1>
+                    <p class="text-sm text-gray-400">AI-Powered Voice Control</p>
+                </div>
+            </div>
+            <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full">
+                <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span class="text-sm text-yellow-300">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Status Card -->
+                <div class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <h2 id="currentTime" class="text-4xl font-bold">--:--</h2>
+                            </div>
+                            <p id="currentDate" class="text-gray-400">Loading...</p>
+                        </div>
+                        <div id="liveIndicator" class="hidden items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full">
+                            <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            <span class="text-sm text-red-300">Live</span>
+                        </div>
+                    </div>
+
+                    <!-- Name Input -->
+                    <div id="nameInput" class="mb-6">
+                        <label class="block text-sm text-gray-400 mb-2">Enter Your Name</label>
+                        <input type="text" id="userName" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors" placeholder="Your name...">
+                    </div>
+
+                    <!-- Voice Control Button -->
+                    <div class="flex justify-center mb-6">
+                        <button id="voiceButton" class="relative group bg-gradient-to-br from-purple-500 to-cyan-500 p-8 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
+                            <div class="absolute inset-0 rounded-full bg-white/20 blur-xl group-hover:bg-white/30 transition-all"></div>
+                            <svg id="micIcon" class="w-12 h-12 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Transcript and Response -->
+                    <div id="responseArea" class="space-y-3 hidden">
+                        <div class="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                            <p class="text-sm text-gray-400 mb-1">You said:</p>
+                            <p id="transcript" class="text-lg">--</p>
+                        </div>
+                        <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+                            <p class="text-sm text-gray-400 mb-1">Assistant:</p>
+                            <p id="response" class="text-lg">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <button onclick="quickCommand('search')" class="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium">Web Search</p>
+                    </button>
+
+                    <button onclick="quickCommand('youtube')" class="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium">YouTube</p>
+                    </button>
+
+                    <button onclick="quickCommand('weather')" class="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium">Weather</p>
+                    </button>
+
+                    <button onclick="quickCommand('time')" class="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium">Time</p>
+                    </button>
+
+                    <button onclick="quickCommand('joke')" class="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium">Joke</p>
+                    </button>
+
+                    <button onclick="quickCommand('news')" class="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+                        <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium">News</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Command History -->
+                <div class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Recent Commands
+                    </h3>
+                    <div id="commandHistory" class="space-y-3">
+                        <p class="text-gray-500 text-sm text-center py-8">No commands yet</p>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-2xl">
+                    <h3 class="text-lg font-bold mb-4">System Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400">Backend</span>
+                            <span id="backendStatus" class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">Checking...</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400">Commands Today</span>
+                            <span id="commandCount" class="text-sm font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400">Response Time</span>
+                            <span class="text-sm font-bold">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>Powered by AI • Voice Recognition • Natural Language Processing</p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:5000/api';
+        let isListening = false;
+        let userName = '';
+        let commandHistory = [];
+
+        // Update time and date
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentDate').textContent = 
+                now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Check backend connection
+        async function checkBackend() {
+            try {
+                const response = await fetch(`${API_URL}/status`);
+                if (response.ok) {
+                    document.getElementById('backendStatus').innerHTML = 
+                        '<span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Active</span>';
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="w-2 h-2 bg-green-500 rounded-full"></div><span class="text-sm text-green-300">Connected</span>';
+                    document.getElementById('connectionStatus').className = 
+                        'flex items-center gap-2 px-3 py-1 bg-green-500/20 border border-green-500/50 rounded-full';
+                }
+            } catch (error) {
+                document.getElementById('backendStatus').innerHTML = 
+                    '<span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Offline</span>';
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="text-sm text-red-300">Disconnected</span>';
+                document.getElementById('connectionStatus').className = 
+                    'flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full';
+            }
+        }
+        checkBackend();
+        setInterval(checkBackend, 5000);
+
+        // Voice button handler
+        document.getElementById('voiceButton').addEventListener('click', async function() {
+            const userNameInput = document.getElementById('userName').value.trim();
+            
+            if (!userName && !userNameInput) {
+                alert('Please enter your name first');
+                return;
+            }
+
+            if (!userName) {
+                userName = userNameInput;
+                document.getElementById('nameInput').style.display = 'none';
+            }
+
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        });
+
+        async function startListening() {
+            isListening = true;
+            document.getElementById('liveIndicator').classList.remove('hidden');
+            document.getElementById('liveIndicator').classList.add('flex');
+            document.getElementById('voiceButton').className = 
+                'relative group bg-gradient-to-br from-red-500 to-pink-500 p-8 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300';
+            
+            document.getElementById('responseArea').classList.remove('hidden');
+            document.getElementById('transcript').textContent = 'Listening...';
+            document.getElementById('response').textContent = 'Processing...';
+
+            try {
+                const response = await fetch(`${API_URL}/listen`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userName })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById('transcript').textContent = data.transcript || 'No speech detected';
+                document.getElementById('response').textContent = data.response || 'Processing...';
+
+                addToHistory(data.transcript);
+                stopListening();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('response').textContent = 
+                    'Error: Backend not connected. Please start the Flask server.';
+                stopListening();
+            }
+        }
+
+        function stopListening() {
+            isListening = false;
+            document.getElementById('liveIndicator').classList.add('hidden');
+            document.getElementById('liveIndicator').classList.remove('flex');
+            document.getElementById('voiceButton').className = 
+                'relative group bg-gradient-to-br from-purple-500 to-cyan-500 p-8 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300';
+        }
+
+        async function quickCommand(type) {
+            const commands = {
+                'search': 'search python tutorials',
+                'youtube': 'open youtube',
+                'weather': 'weather',
+                'time': 'the time',
+                'joke': 'joke',
+                'news': 'news'
+            };
+
+            const command = commands[type];
+            document.getElementById('responseArea').classList.remove('hidden');
+            document.getElementById('transcript').textContent = command;
+            document.getElementById('response').textContent = 'Processing...';
+
+            try {
+                const response = await fetch(`${API_URL}/command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, userName })
+                });
+
+                const data = await response.json();
+                document.getElementById('response').textContent = data.response || 'Command executed';
+                addToHistory(command);
+            } catch (error) {
+                document.getElementById('response').textContent = 
+                    'Error: Backend not connected. Please start the Flask server.';
+            }
+        }
+
+        function addToHistory(command) {
+            if (!command || command === 'None') return;
+            
+            const time = new Date().toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            commandHistory.unshift({ command, time });
+            commandHistory = commandHistory.slice(0, 5);
+
+            const historyHTML = commandHistory.map(item => `
+                <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+                    <p class="text-sm mb-1">${item.command}</p>
+                    <p class="text-xs text-gray-500">${item.time}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('commandHistory').innerHTML = historyHTML || 
+                '<p class="text-gray-500 text-sm text-center py-8">No commands yet</p>';
+            
+            document.getElementById('commandCount').textContent = commandHistory.length;
+        }
+    </script>
+</body>
+</html>
